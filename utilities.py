@@ -145,3 +145,17 @@ def create_1_VS_others_dataset(class_one,data_dictionary):
 	concatenated_labels = class_one_labels + others_labels
 
 	return unison_shuffled_copies(np.array(concatenated_data),np.array(concatenated_labels))
+
+
+def create_1_VS_1_dataset(data_dictionary):
+
+	pair_datasets = {}
+
+	for class_1 in data_dictionary:
+		for class_2 in data_dictionary:
+			if(pair_datasets.get((class_2,class_1)) == None and class_1!=class_2): 
+				concat_labels = [1]*len(data_dictionary.get(class_1)) + [-1]*len(data_dictionary.get(class_2))
+				concat_data = data_dictionary.get(class_1) + data_dictionary.get(class_2)
+				pair_datasets[(class_1,class_2)] = (unison_shuffled_copies(np.array(concat_data),np.array(concat_labels)))
+
+	return pair_datasets
