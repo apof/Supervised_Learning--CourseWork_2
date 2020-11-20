@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
+import math
 
 class AdaBoost:
 
@@ -60,8 +61,6 @@ class AdaBoost:
 
 		for t in range(self.Boosting_Rounds):
 
-			print("Boosting round: " + str(t))
-
 			curr_sample_weights = self.sample_weights[t]
 			stump = DecisionTreeClassifier(max_depth=1, max_leaf_nodes=2)
 			stump = stump.fit(training_data, training_labels, sample_weight=curr_sample_weights)
@@ -70,26 +69,33 @@ class AdaBoost:
 			weak_learner_of_round = stump.predict(training_data)
 			error = curr_sample_weights[(weak_learner_of_round != training_labels)].sum()
 
-			## the weight of the weak learner of the round
-			a = np.log((1 - error) / error) / 2
+			if(error < 1/2):
 
-			## calculate and update the new weights
-			new_sample_weights = (curr_sample_weights * np.exp(-a * training_labels * weak_learner_of_round))
-			normalisation_constant_z = np.sum(new_sample_weights)
-			new_sample_weights /= normalisation_constant_z
+				## the weight of the weak learner of the round
+				a = (1/2)*np.log((1 - error)/error)
 
-			# If not final iteration, update sample weights for t+1
-			if t+1 < self.Boosting_Rounds:
-				self.sample_weights[t+1] = new_sample_weights
+				## calculate and update the new weights
+				new_sample_weights = (curr_sample_weights * np.exp(-a * training_labels * weak_learner_of_round))
+				new_sample_weights /= (2*np.sqrt(error*(1-error)))
+				#normalisation_constant_z = np.sum(new_sample_weights)
+				#new_sample_weights /= normalisation_constant_z
 
-			# save results of iteration
-			self.stumps.append(stump)
-			self.stump_weights.append(a)
+				# If not final iteration, update sample weights for t+1
+				if t+1 < self.Boosting_Rounds:
+					self.sample_weights[t+1] = new_sample_weights
 
-			self.compute_overall_response(t,training_labels,a*weak_learner_of_round)
-    
-			self.compute_current_loss(t,training_labels)
+				# save results of iteration
+				self.stumps.append(stump)
+				self.stump_weights.append(a)
 
+				self.compute_overall_response(t,training_labels,a*weak_learner_of_round)
+				self.compute_current_loss(t,training_labels)
+
+				#print("Boosting round: " + str(t) + " with error: " + str(error) + " and loss: " + str(self.loss[t]))
+
+			else:
+				print("Boosting Terminated Because error was > 1/2")
+				return
 
 	def predict(self,testing_data):
 
@@ -97,5 +103,6 @@ class AdaBoost:
 		for prediction_stump in self.stumps:
 			prediction_stumps.append(prediction_stump.predict(testing_data))
 
-		return np.sign(np.dot(self.stump_weights,prediction_stumps))
+		confidence = np.dot(self.stump_weights,prediction_stumps)
 
+		return np.sign(confidence),confidence
