@@ -4,24 +4,32 @@ import numpy as np
 
 class KernelPerceptron:
 
-	def __init__(self):
+	def __init__(self,params):
 
 		self.alpha_weights = None
 		self.weights = None
 		self.kernel_type = None
 		self.history_points = None
+		self.kernel_parameter = params[1]
+		self.kernel_type = params[0]
 
-	def polynomial_kernel(self,x,y,p = 3):
+	## use a specific type of kernel function that we want
+	def kernel_function(self,x,y):
+		if(self.kernel_type == 'gaussian'):
+			return self.gaussian_kernel(x,y,self.kernel_parameter)
+		elif(self.kernel_type == 'polynomial'):
+			return self.polynomial_kernel(x,y,self.kernel_parameter)
+
+	def polynomial_kernel(self,x,y,p):
 		return (np.dot(x,y))**p
 
-	def gaussian_kernel(self,x,y,sigma = 0.5):
+	def gaussian_kernel(self,x,y,sigma):
 		return np.exp(-np.linalg.norm(x-y)**2/(2*(sigma**2)))
 
-	def fit(self,training_data,training_labels,kernel_type):
+	def fit(self,training_data,training_labels):
 
 		self.alpha_weights = [0]
 		self.history_points = [training_data[0]]
-		#self.kernel_type = kernel_type
 
 		# begin receiving points
 		for i in range(1,training_data.shape[0]):
@@ -29,25 +37,17 @@ class KernelPerceptron:
 			new_point = training_data[i]
 			self.history_points.append(new_point)
 
-			#print("Received new point: " + str(i))
-
-			## for all the points before the received point
 			result = []
 			temp_list = []
 			for j in range(0,i):
 				temp_list.append(j)
-				result.append(self.alpha_weights[j] * self.gaussian_kernel(training_data[j],new_point))
-				#print(str(self.alpha_weights[j]) + "   " + str(self.gaussian_kernel(training_data[j],new_point)))
-			#print("check this point with: " + str(temp_list))
-			#print("Results: " + str(result))
+				result.append(self.alpha_weights[j] * self.kernel_function(training_data[j],new_point))
 			prediction = np.sign(sum(result))
 
 			if(prediction != training_labels[i]):
 				self.alpha_weights.append(training_labels[i])
 			else:
 				self.alpha_weights.append(0)
-
-		#print(self.alpha_weights)
 
 		return
 
@@ -56,12 +56,13 @@ class KernelPerceptron:
 
 		predictions = []
 
+		## for all the points we need to test
 		for i in range(0,test_data.shape[0]):
 			test_point = test_data[i]
 			## for all the points that we have already seen
 			sum_result = 0
 			for j in range(0,len(self.alpha_weights)):
-				sum_result += self.alpha_weights[j] * self.gaussian_kernel(self.history_points[j],test_point)
+				sum_result += self.alpha_weights[j] * self.kernel_function(self.history_points[j],test_point)
 			predictions.append(sum_result)
 
 		return np.sign(predictions),predictions

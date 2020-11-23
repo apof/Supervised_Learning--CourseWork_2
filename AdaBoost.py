@@ -5,7 +5,7 @@ import math
 
 class AdaBoost:
 
-	def __init__(self):
+	def __init__(self,params):
 
 		## weak learners and their weights
 		self.stumps = []
@@ -14,7 +14,7 @@ class AdaBoost:
 		## sample weights
 		self.weights = None
 		
-		self.Boosting_Rounds = None
+		self.Boosting_Rounds = params[0]
 
 		## the response of the strong learner performance of every round
 		self.strong_learner_response = None
@@ -50,9 +50,8 @@ class AdaBoost:
 	def compute_current_loss(self,boosting_round,training_labels):
 		self.loss.append(np.sum(np.exp((-training_labels*self.strong_learner_response[:]))))
 
-	def fit(self,training_data,training_labels,Boosting_Rounds):
+	def fit(self,training_data,training_labels):
 
-		self.Boosting_Rounds = Boosting_Rounds
 		self.sample_weights = np.zeros((self.Boosting_Rounds, training_data.shape[0]))
 		self.strong_learner_response = np.zeros(training_data.shape[0])
 

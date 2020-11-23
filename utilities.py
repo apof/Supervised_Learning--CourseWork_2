@@ -1,5 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import AdaBoost
+import KernelPerceptron
+
+def classifier(type,hyperparams):
+
+	if(type == 'AdaBoost'):
+		return AdaBoost.AdaBoost(hyperparams)
+	elif(type == 'KernelPerceptron'):
+		return KernelPerceptron.KernelPerceptron(hyperparams)
 
 def calculate_accuracy(predictions,labels):
 	return (1-((predictions != labels).sum())/len(labels))*100
@@ -159,3 +168,85 @@ def create_1_VS_1_dataset(data_dictionary):
 				pair_datasets[(class_1,class_2)] = (unison_shuffled_copies(np.array(concat_data),np.array(concat_labels)))
 
 	return pair_datasets
+
+
+def one_VS_all_training(data_per_class_dictionary,class_number,algorithm,hyperparams):
+    
+    models_dict = {}
+    for n in range(0,class_number):
+        print("Training a classifier for: " + str(n))
+        dat,lbl = create_1_VS_others_dataset(n,data_per_class_dictionary)
+        model = None
+
+        model = classifier(algorithm,hyperparams)
+        model.fit(dat,lbl)
+            
+        models_dict[n] = model
+        ##model.plot_learning_process()
+        
+    return models_dict
+
+
+def one_VS_all_testing(models_dict,data,labels):
+    
+    models_confidence = []
+    for key in models_dict:
+        model = models_dict.get(key)
+        
+        confidence = None
+        
+        _,confidence = model.predict(data)
+                
+        models_confidence.append(confidence)
+        
+    predictions = []
+        
+    for i in range(len(data)):
+        results = []
+        for j in range(len(models_confidence)):
+            results.append((j,models_confidence[j][i]))
+            
+        ## return as the prediction of the i-th datum the prediction of the classifier with the highest confidence
+        predictions.append(sorted(results, key=lambda tup: tup[1],reverse = True)[0][0])
+        
+    return predictions
+
+
+def one_vs_one_training(pair_datasets,algorithm,hyperparams):
+    
+    pairwise_models_dict = {}
+    
+    for  key in pair_datasets:
+        
+        (class_1,class_2) = key
+        
+        print("Training a classifier for pair: " + str(class_1) + " " + str(class_2))
+        model = classifier(algorithm,hyperparams)
+        model.fit(pair_datasets.get(key)[0],pair_datasets.get(key)[1])
+        
+        pairwise_models_dict[key] = model
+        
+    return pairwise_models_dict
+
+
+
+def one_vs_one_testing(pair_models,data,num_classes):
+    
+    predictions = []
+    
+    confidence_of_each_classifier = np.zeros((len(data),num_classes))
+    for  key in pair_models:
+        (class_1,class_2) = key
+        model = pair_models.get(key)
+        _,confidence = model.predict(data)
+        for i in range(len(confidence)):
+            if(confidence[i] > 0):
+                confidence_of_each_classifier[i][class_1] += abs(confidence[i])
+            else:
+                confidence_of_each_classifier[i][class_2] += abs(confidence[i])
+                
+    for result in confidence_of_each_classifier:
+        predictions.append(np.where(result == np.amax(result))[0][0])
+        
+    return predictions
+
