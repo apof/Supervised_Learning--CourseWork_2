@@ -10,6 +10,24 @@ def classifier(type,hyperparams):
 	elif(type == 'KernelPerceptron'):
 		return KernelPerceptron.KernelPerceptron(hyperparams)
 
+
+def confusion_matrix(predictions,labels):
+
+	confusion_dict = {}
+
+	for i in range(10):
+		for j in range(10):
+			confusion_dict[(i,j)] = 0
+
+	for i in range(0,len(predictions)):
+		if(predictions[i]!=labels[i]):
+			confusion_dict[(predictions[i],labels[i])] += 1
+
+	for key in confusion_dict:
+		print(str(key) + " " + str(confusion_dict.get(key)))
+
+
+
 def calculate_accuracy(predictions,labels):
 	return (1-((predictions != labels).sum())/len(labels))*100
 
