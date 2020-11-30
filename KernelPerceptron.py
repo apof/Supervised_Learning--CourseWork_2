@@ -66,5 +66,3 @@ class KernelPerceptron:
 			predictions.append(sum_result)
 
 		return np.sign(predictions),predictions
-
-

@@ -218,6 +218,7 @@ def one_VS_all_testing(models_dict,data,labels):
         models_confidence.append(confidence)
         
     predictions = []
+    confidence_predictions = []
         
     for i in range(len(data)):
         results = []
@@ -226,8 +227,9 @@ def one_VS_all_testing(models_dict,data,labels):
             
         ## return as the prediction of the i-th datum the prediction of the classifier with the highest confidence
         predictions.append(sorted(results, key=lambda tup: tup[1],reverse = True)[0][0])
+        confidence_predictions.append((i,(sorted(results, key=lambda tup: tup[1],reverse = True)[0][1])))
         
-    return predictions
+    return predictions,confidence_predictions
 
 
 def one_vs_one_training(pair_datasets,algorithm,hyperparams):
@@ -268,3 +270,10 @@ def one_vs_one_testing(pair_models,data,num_classes):
         
     return predictions
 
+
+def get_lowest_confidence_items(confidence):
+	indexes = []
+	sorted_confidence = sorted(confidence, key=lambda tup: tup[1],reverse = False)
+	for i in range(5):
+		indexes.append(sorted_confidence[i][0])
+	return indexes
