@@ -51,6 +51,32 @@ class KernelPerceptron:
 
 		return
 
+	def fit_2(self,training_data,training_labels):
+
+		self.alpha_weights = [0]
+		self.history_points = [training_data[0]]
+
+		data_num = training_data.shape[0]
+		Kernel_Matrix = np.zeros((data_num,data_num))
+		for i in range(0,data_num):
+			for j in range(0,data_num):
+				Kernel_Matrix[i][j] = self.kernel_function(training_data[i],training_data[j])
+
+		result = 0
+
+		for i in range(1,training_data.shape[0]):
+
+			new_point = training_data[i]
+			self.history_points.append(new_point)
+
+			result += np.dot(np.array(self.alpha_weights),Kernel_Matrix[i][0:i])
+			prediction = np.sign(result)
+
+			if(prediction != training_labels[i]):
+				self.alpha_weights.append(training_labels[i])
+			else:
+				self.alpha_weights.append(0)
+
 
 	def predict(self,test_data):
 
@@ -63,6 +89,27 @@ class KernelPerceptron:
 			sum_result = 0
 			for j in range(0,len(self.alpha_weights)):
 				sum_result += self.alpha_weights[j] * self.kernel_function(self.history_points[j],test_point)
+			predictions.append(sum_result)
+
+		return np.sign(predictions),predictions
+
+
+	def predict_2(self,test_data):
+
+		train_data_num = len(self.history_points)
+		test_data_num = test_data.shape[0]
+		Kernel_Matrix = np.zeros((train_data_num,test_data_num))
+
+		predictions = []
+
+		for i in range(0,train_data_num):
+			for j in range(0,test_data_num):
+				Kernel_Matrix[i][j] = self.kernel_function(self.history_points[i],test_data[j])
+
+		for i in range(0,test_data_num):
+			sum_result = 0
+			for j in range(0,len(self.alpha_weights)):
+				sum_result += self.alpha_weights[j] * Kernel_Matrix[j][i]
 			predictions.append(sum_result)
 
 		return np.sign(predictions),predictions
