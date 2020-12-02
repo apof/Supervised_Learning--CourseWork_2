@@ -20,13 +20,32 @@ class KernelPerceptron:
 		elif(self.kernel_type == 'polynomial'):
 			return self.polynomial_kernel(x,y,self.kernel_parameter)
 
+	def Kernel_Matrix(self,x,y):
+		if(self.kernel_type == 'gaussian'):
+			return self.gaussian_kernel_vectorised(x,y,self.kernel_parameter)
+		elif(self.kernel_type == 'polynomial'):
+			return self.polynomial_kernel_vectorised(x,y,self.kernel_parameter)
+
+	def polynomial_kernel_vectorised(self,x,y,p):
+		K_matrix = (np.dot(x,y.T))**p
+		return K_matrix
+
+	def gaussian_kernel_vectorised(self,x,y,gamma,var=1):
+		x = np.array(x)
+		y = np.array(y)
+
+		X_norm = np.sum(x**2,axis = -1)
+		Y_norm = np.sum(y**2,axis = -1)
+		K_matrix = var*np.exp(-gamma*(X_norm[:,None] + Y_norm[None,:] - 2*np.dot(x,y.T)))
+		return K_matrix
+
 	def polynomial_kernel(self,x,y,p):
 		return (np.dot(x,y))**p
 
 	def gaussian_kernel(self,x,y,sigma):
 		return np.exp(-np.linalg.norm(x-y)**2/(2*(sigma**2)))
 
-	def fit(self,training_data,training_labels):
+	def naive_fit(self,training_data,training_labels):
 
 		self.alpha_weights = [0]
 		self.history_points = [training_data[0]]
@@ -51,16 +70,12 @@ class KernelPerceptron:
 
 		return
 
-	def fit_2(self,training_data,training_labels):
+	def fit(self,training_data,training_labels):
 
 		self.alpha_weights = [0]
 		self.history_points = [training_data[0]]
 
-		data_num = training_data.shape[0]
-		Kernel_Matrix = np.zeros((data_num,data_num))
-		for i in range(0,data_num):
-			for j in range(0,data_num):
-				Kernel_Matrix[i][j] = self.kernel_function(training_data[i],training_data[j])
+		Kernel_Matrix = self.Kernel_Matrix(training_data,training_data)
 
 		result = 0
 
@@ -78,7 +93,7 @@ class KernelPerceptron:
 				self.alpha_weights.append(0)
 
 
-	def predict(self,test_data):
+	def naive_predict(self,test_data):
 
 		predictions = []
 
@@ -94,22 +109,7 @@ class KernelPerceptron:
 		return np.sign(predictions),predictions
 
 
-	def predict_2(self,test_data):
-
-		train_data_num = len(self.history_points)
-		test_data_num = test_data.shape[0]
-		Kernel_Matrix = np.zeros((train_data_num,test_data_num))
-
-		predictions = []
-
-		for i in range(0,train_data_num):
-			for j in range(0,test_data_num):
-				Kernel_Matrix[i][j] = self.kernel_function(self.history_points[i],test_data[j])
-
-		for i in range(0,test_data_num):
-			sum_result = 0
-			for j in range(0,len(self.alpha_weights)):
-				sum_result += self.alpha_weights[j] * Kernel_Matrix[j][i]
-			predictions.append(sum_result)
-
+	def predict(self,test_data):
+		Kernel_Matrix = self.Kernel_Matrix(self.history_points,test_data)
+		predictions = np.dot(self.alpha_weights,Kernel_Matrix)
 		return np.sign(predictions),predictions

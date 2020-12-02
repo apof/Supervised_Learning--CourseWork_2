@@ -14,7 +14,7 @@ class AdaBoost:
 		## sample weights
 		self.weights = None
 		
-		self.Boosting_Rounds = params[0]
+		self.Boosting_Rounds = int(params[1])
 
 		## the response of the strong learner performance of every round
 		self.strong_learner_response = None

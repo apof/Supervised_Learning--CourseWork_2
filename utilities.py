@@ -190,90 +190,121 @@ def create_1_VS_1_dataset(data_dictionary):
 
 def one_VS_all_training(data_per_class_dictionary,class_number,algorithm,hyperparams):
     
-    models_dict = {}
-    for n in range(0,class_number):
-        print("Training a classifier for: " + str(n))
-        dat,lbl = create_1_VS_others_dataset(n,data_per_class_dictionary)
-        model = None
+	models_dict = {}
+	for n in range(0,class_number):
+		#print("Training a classifier for: " + str(n))
+		dat,lbl = create_1_VS_others_dataset(n,data_per_class_dictionary)
+		model = None
 
-        model = classifier(algorithm,hyperparams)
-        model.fit(dat,lbl)
+		model = classifier(algorithm,hyperparams)
+		model.fit(dat,lbl)
             
-        models_dict[n] = model
-        ##model.plot_learning_process()
+		models_dict[n] = model
+		##model.plot_learning_process()
         
-    return models_dict
+	return models_dict
 
 
 def one_VS_all_testing(models_dict,data,labels):
     
-    models_confidence = []
-    for key in models_dict:
-        model = models_dict.get(key)
+	models_confidence = []
+	for key in models_dict:
+		model = models_dict.get(key)
+		confidence = None
+		_,confidence = model.predict(data)        
+		models_confidence.append(confidence)
         
-        confidence = None
+	predictions = []
+	confidence_predictions = []
+	average_confidence = []
         
-        _,confidence = model.predict(data)
-                
-        models_confidence.append(confidence)
-        
-    predictions = []
-    confidence_predictions = []
-        
-    for i in range(len(data)):
-        results = []
-        for j in range(len(models_confidence)):
-            results.append((j,models_confidence[j][i]))
+	for i in range(len(data)):
+		results = []
+		avg_conf = 0
+		for j in range(len(models_confidence)):
+			avg_conf += models_confidence[j][i]
+			results.append((j,models_confidence[j][i]))
+
+		avg_conf = avg_conf/len(models_confidence)
+
+		average_confidence.append((i,avg_conf))
             
-        ## return as the prediction of the i-th datum the prediction of the classifier with the highest confidence
-        predictions.append(sorted(results, key=lambda tup: tup[1],reverse = True)[0][0])
-        confidence_predictions.append((i,(sorted(results, key=lambda tup: tup[1],reverse = True)[0][1])))
+		## return as the prediction of the i-th datum the prediction of the classifier with the highest confidence
+		predictions.append(sorted(results, key=lambda tup: tup[1],reverse = True)[0][0])
+		confidence_predictions.append((i,(sorted(results, key=lambda tup: tup[1],reverse = True)[0][1])))
         
-    return predictions,confidence_predictions
+	return predictions,confidence_predictions,average_confidence
 
 
 def one_vs_one_training(pair_datasets,algorithm,hyperparams):
     
-    pairwise_models_dict = {}
+	pairwise_models_dict = {}
     
-    for  key in pair_datasets:
+	for  key in pair_datasets:
+		(class_1,class_2) = key
         
-        (class_1,class_2) = key
+		#print("Training a classifier for pair: " + str(class_1) + " " + str(class_2))
+		model = classifier(algorithm,hyperparams)
+		model.fit(pair_datasets.get(key)[0],pair_datasets.get(key)[1])
         
-        print("Training a classifier for pair: " + str(class_1) + " " + str(class_2))
-        model = classifier(algorithm,hyperparams)
-        model.fit(pair_datasets.get(key)[0],pair_datasets.get(key)[1])
+		pairwise_models_dict[key] = model
         
-        pairwise_models_dict[key] = model
-        
-    return pairwise_models_dict
+	return pairwise_models_dict
 
 
 
 def one_vs_one_testing(pair_models,data,num_classes):
     
-    predictions = []
+	predictions = []
     
-    confidence_of_each_classifier = np.zeros((len(data),num_classes))
-    for  key in pair_models:
-        (class_1,class_2) = key
-        model = pair_models.get(key)
-        _,confidence = model.predict(data)
-        for i in range(len(confidence)):
-            if(confidence[i] > 0):
-                confidence_of_each_classifier[i][class_1] += abs(confidence[i])
-            else:
-                confidence_of_each_classifier[i][class_2] += abs(confidence[i])
+	confidence_of_each_classifier = np.zeros((len(data),num_classes))
+	for  key in pair_models:
+		(class_1,class_2) = key
+		model = pair_models.get(key)
+		_,confidence = model.predict(data)
+		for i in range(len(confidence)):
+			if(confidence[i] > 0):
+				confidence_of_each_classifier[i][class_1] += abs(confidence[i])
+			else:
+				confidence_of_each_classifier[i][class_2] += abs(confidence[i])
                 
-    for result in confidence_of_each_classifier:
-        predictions.append(np.where(result == np.amax(result))[0][0])
+	for result in confidence_of_each_classifier:
+		predictions.append(np.where(result == np.amax(result))[0][0])
         
-    return predictions
+	return predictions
 
+## find the misclassified items with the highest confidence
+def get_hardest_to_predict_items(confidence,average_confidence,predictions,labels):
 
-def get_lowest_confidence_items(confidence):
-	indexes = []
-	sorted_confidence = sorted(confidence, key=lambda tup: tup[1],reverse = False)
-	for i in range(5):
-		indexes.append(sorted_confidence[i][0])
-	return indexes
+	count = 0
+	items_1 = []
+	index = 0
+
+	## sort items with the biggest confidence at the start
+	## the hard items are misclassified items with big confidence
+	## that means that we predict them in a very wrong way
+	sorted_confidence = sorted(confidence, key=lambda tup: tup[1],reverse = True)
+
+	while(count!=5):
+		ind = sorted_confidence[index][0]
+		if(predictions[ind]!=labels[ind]):
+			items_1.append(ind)
+			count += 1
+		index += 1
+
+	count = 0
+	items_2 = []
+	index = 0
+
+	## as an alternative find the misclasified items with the lower avearge confidence among all classifiers
+	sorted_average_confidence = sorted(average_confidence, key=lambda tup: tup[1],reverse = False)
+
+	while(count!=5):
+		ind = sorted_average_confidence[index][0]
+		if(predictions[ind]!=labels[ind]):
+			items_2.append(ind)
+			count += 1
+		index += 1
+
+	return items_1,items_2
+
