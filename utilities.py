@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import AdaBoost
 import KernelPerceptron
+from sklearn.svm import SVC
 
 def classifier(type,hyperparams):
 
@@ -9,7 +10,14 @@ def classifier(type,hyperparams):
 		return AdaBoost.AdaBoost(hyperparams)
 	elif(type == 'KernelPerceptron'):
 		return KernelPerceptron.KernelPerceptron(hyperparams)
+	elif(type == 'SVM'):
+		return SVC(C = hyperparams[1],gamma = 'auto')
 
+def predict(model,type,testing_data):
+	if(type == 'AdaBoost' or type == 'KernelPerceptron'):
+		return model.predict(testing_data)
+	elif(type == 'SVM'):
+		return model.predict(testing_data),model.decision_function(testing_data)
 
 def confusion_matrix(predictions,labels):
 
@@ -141,8 +149,8 @@ def collect_each_class_images(images,labels,class_number):
 	for i in range(len(images)):
 		dataset_per_num.get(labels[i]).append(images[i])
 
-	for key in dataset_per_num:
-		print(str(len(dataset_per_num.get(key))) + " images of class " + str(key) + " found") 
+	#for key in dataset_per_num:
+	#	print(str(len(dataset_per_num.get(key))) + " images of class " + str(key) + " found") 
 
 	return dataset_per_num
 
@@ -205,13 +213,14 @@ def one_VS_all_training(data_per_class_dictionary,class_number,algorithm,hyperpa
 	return models_dict
 
 
-def one_VS_all_testing(models_dict,data,labels):
+def one_VS_all_testing(model_type,models_dict,data,labels):
     
 	models_confidence = []
 	for key in models_dict:
 		model = models_dict.get(key)
 		confidence = None
-		_,confidence = model.predict(data)        
+		_,confidence = predict(model,model_type,data)
+		#_,confidence = model.predict(data)        
 		models_confidence.append(confidence)
         
 	predictions = []
@@ -253,7 +262,7 @@ def one_vs_one_training(pair_datasets,algorithm,hyperparams):
 
 
 
-def one_vs_one_testing(pair_models,data,num_classes):
+def one_vs_one_testing(model_type,pair_models,data,num_classes):
     
 	predictions = []
     
@@ -261,7 +270,8 @@ def one_vs_one_testing(pair_models,data,num_classes):
 	for  key in pair_models:
 		(class_1,class_2) = key
 		model = pair_models.get(key)
-		_,confidence = model.predict(data)
+		#_,confidence = model.predict(data)
+		_,confidence = predict(model,model_type,data)
 		for i in range(len(confidence)):
 			if(confidence[i] > 0):
 				confidence_of_each_classifier[i][class_1] += abs(confidence[i])
