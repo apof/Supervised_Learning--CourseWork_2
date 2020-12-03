@@ -22,18 +22,61 @@ def predict(model,type,testing_data):
 def confusion_matrix(predictions,labels):
 
 	confusion_dict = {}
+	labels_dict = {}
 
 	for i in range(10):
 		for j in range(10):
 			confusion_dict[(i,j)] = 0
 
+	for i in range(10):
+		labels_dict[i] = 0
+
 	for i in range(0,len(predictions)):
+		labels_dict[labels[i]] += 1
 		if(predictions[i]!=labels[i]):
 			confusion_dict[(predictions[i],labels[i])] += 1
 
-	for key in confusion_dict:
-		print(str(key) + " " + str(confusion_dict.get(key)))
+	error_confusion_dict = {}
 
+	## compute error frequencies
+	for key in confusion_dict:
+		prdedicted_class,actual_class = key
+		value = confusion_dict.get(key)
+		error_confusion_dict[key] = (value/labels_dict.get(actual_class))*100
+
+
+	#for key in error_confusion_dict:
+	#	print(str(key) + " " + str(error_confusion_dict.get(key)))
+
+
+	return confusion_dict
+
+def get_average_confusions(confusion_matrix_list):
+
+	dicts_len = len(confusion_matrix_list)
+
+	avg_conf_dict = {}
+
+	for i in range(10):
+		for j in range(10):
+			avg_conf_dict[(i,j)] = []
+
+
+	for i in range(10):
+		for j in range(10):
+			for k in range(dicts_len):
+				avg_conf_dict.get((i,j)).append(confusion_matrix_list[k].get((i,j)))
+
+
+	for i in range(10):
+		for j in range(10):
+			error_array = np.array(avg_conf_dict.get((i,j)))
+			mean_error = np.mean(error_array)
+			std_error = np.std(error_array)
+			avg_conf_dict[(i,j)] = (mean_error,std_error)
+
+	for key in avg_conf_dict:
+		print(str(key) + " " + str(avg_conf_dict.get(key)))
 
 
 def calculate_accuracy(predictions,labels):
