@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.linalg import multi_dot
 
 
 class KernelPerceptron:
@@ -70,7 +71,8 @@ class KernelPerceptron:
 
 		return
 
-	def fit(self,training_data,training_labels):
+	def fit_2(self,training_data,training_labels):
+
 
 		self.alpha_weights = [0]
 		self.history_points = [training_data[0]]
@@ -92,6 +94,48 @@ class KernelPerceptron:
 			else:
 				self.alpha_weights.append(0)
 
+	def compute_kernel_values(self,epoch_index,sample_index,Kernel_Matrix):
+
+		Kernel_List = []
+		for i in range(epoch_index):
+			Kernel_List.append(Kernel_Matrix[sample_index][:])
+
+		Kernel_List.append(Kernel_Matrix[sample_index][0:sample_index])
+
+		return np.concatenate(Kernel_List)
+
+	def fit(self,training_data,training_labels):
+
+		self.alpha_weights = []
+
+		Kernel_Matrix = self.Kernel_Matrix(training_data,training_data)
+
+		self.history_points = training_data
+
+		epochs = 4
+
+		result = 0
+
+		for epoch_index in range(epochs):
+			self.epochs = epoch_index + 1
+			#print("Training for epoch: " + str(epoch_index + 1))
+			for i in range(0,training_data.shape[0]):
+
+				if (i==0):
+					self.alpha_weights.append(0)
+				else:
+					result += np.dot(np.array(self.alpha_weights),self.compute_kernel_values(epoch_index,i,Kernel_Matrix))
+					prediction = np.sign(result)
+
+					if(prediction != training_labels[i]):
+						self.alpha_weights.append(training_labels[i])
+					else:
+						self.alpha_weights.append(0)
+
+			#epoch_predictions,_ = self.predict(training_data)
+			#error = (epoch_predictions != training_labels).mean()
+			#print("Error of epoch " + str(epoch_index + 1) + " is " + str(error))
+
 
 	def naive_predict(self,test_data):
 
@@ -109,7 +153,24 @@ class KernelPerceptron:
 		return np.sign(predictions),predictions
 
 
-	def predict(self,test_data):
+	def predict_2(self,test_data):
 		Kernel_Matrix = self.Kernel_Matrix(self.history_points,test_data)
 		predictions = np.dot(self.alpha_weights,Kernel_Matrix)
+		return np.sign(predictions),predictions
+
+	def predict(self,test_data):
+
+		Kernel_Matrix = self.Kernel_Matrix(self.history_points,test_data)
+
+		predictions = np.zeros(test_data.shape[0])
+
+		start = 0
+		end = self.history_points.shape[0]
+		for epoch_index in range(self.epochs):
+			preds_of_epoch = np.dot(self.alpha_weights[start:end],Kernel_Matrix)
+
+			predictions = np.add(predictions,preds_of_epoch)
+			start += self.history_points.shape[0]
+			end += self.history_points.shape[0]
+
 		return np.sign(predictions),predictions

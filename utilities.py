@@ -80,7 +80,9 @@ def get_average_confusions(confusion_matrix_list):
 
 
 def calculate_accuracy(predictions,labels):
-	return (1-((predictions != labels).sum())/len(labels))*100
+	#return (1-((predictions != labels).sum())/len(labels))*100
+	return (((predictions != labels).sum())/len(labels))*100
+
 
 ### implementation of random train-test split
 def data_split(Data,Labels,test_size):
@@ -338,7 +340,7 @@ def get_hardest_to_predict_items(confidence,average_confidence,predictions,label
 	## that means that we predict them in a very wrong way
 	sorted_confidence = sorted(confidence, key=lambda tup: tup[1],reverse = True)
 
-	while(count!=5):
+	while(count!=10):
 		ind = sorted_confidence[index][0]
 		if(predictions[ind]!=labels[ind]):
 			items_1.append(ind)
@@ -352,7 +354,7 @@ def get_hardest_to_predict_items(confidence,average_confidence,predictions,label
 	## as an alternative find the misclasified items with the lower avearge confidence among all classifiers
 	sorted_average_confidence = sorted(average_confidence, key=lambda tup: tup[1],reverse = False)
 
-	while(count!=5):
+	while(count!=10):
 		ind = sorted_average_confidence[index][0]
 		if(predictions[ind]!=labels[ind]):
 			items_2.append(ind)
