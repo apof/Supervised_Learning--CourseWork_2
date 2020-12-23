@@ -32,7 +32,10 @@ def confusion_matrix(predictions,labels):
 		labels_dict[i] = 0
 
 	for i in range(0,len(predictions)):
-		labels_dict[labels[i]] += 1
+		
+		lbl_count = labels_dict.get(labels[i])
+		labels_dict[labels[i]] = lbl_count + 1
+
 		if(predictions[i]!=labels[i]):
 			confusion_dict[(predictions[i],labels[i])] += 1
 
@@ -49,7 +52,7 @@ def confusion_matrix(predictions,labels):
 	#	print(str(key) + " " + str(error_confusion_dict.get(key)))
 
 
-	return confusion_dict
+	return error_confusion_dict
 
 def get_average_confusions(confusion_matrix_list):
 

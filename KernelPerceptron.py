@@ -112,7 +112,7 @@ class KernelPerceptron:
 
 		self.history_points = training_data
 
-		epochs = 1
+		epochs = 10
 
 		result = 0
 
