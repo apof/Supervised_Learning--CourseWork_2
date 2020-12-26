@@ -75,11 +75,14 @@ class AdaBoost:
 
 				## calculate and update the new weights
 				new_sample_weights = (curr_sample_weights * np.exp(-a * training_labels * weak_learner_of_round))
+				## normalise the new weights
 				new_sample_weights /= (2*np.sqrt(error*(1-error)))
+
+				## alternative weights normalisation approach
 				#normalisation_constant_z = np.sum(new_sample_weights)
 				#new_sample_weights /= normalisation_constant_z
 
-				# If not final iteration, update sample weights for t+1
+				# If not final iteration, update sample weights
 				if t+1 < self.Boosting_Rounds:
 					self.sample_weights[t+1] = new_sample_weights
 

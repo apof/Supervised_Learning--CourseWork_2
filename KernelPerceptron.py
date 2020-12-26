@@ -94,6 +94,22 @@ class KernelPerceptron:
 			else:
 				self.alpha_weights.append(0)
 
+	def fit(self,training_data,training_labels):
+
+		self.alpha_weights = np.zeros((training_data.shape[0]))
+		self.history_points = training_data
+		self.history_labels = training_labels
+
+		Kernel_Matrix = self.Kernel_Matrix(training_data,training_data)
+
+		for epoch in range(5):
+			#print("Training for epoch " + str(epoch))
+			for j in range(training_data.shape[0]):
+				if(np.sign((self.alpha_weights*training_labels).dot(Kernel_Matrix[:,j])) != training_labels[j]):
+					self.alpha_weights[j] += 1
+
+
+
 	def compute_kernel_values(self,epoch_index,sample_index,Kernel_Matrix):
 
 		Kernel_List = []
@@ -104,7 +120,7 @@ class KernelPerceptron:
 
 		return np.concatenate(Kernel_List)
 
-	def fit(self,training_data,training_labels):
+	def fit_3(self,training_data,training_labels):
 
 		self.alpha_weights = []
 
@@ -112,7 +128,7 @@ class KernelPerceptron:
 
 		self.history_points = training_data
 
-		epochs = 10
+		epochs = 1
 
 		result = 0
 
@@ -136,6 +152,17 @@ class KernelPerceptron:
 			#error = (epoch_predictions != training_labels).mean()
 			#print("Error of epoch " + str(epoch_index + 1) + " is " + str(error))
 
+	def predict(self,test_data):
+
+		Kernel_Matrix = self.Kernel_Matrix(self.history_points,test_data)
+
+		predictions = []
+
+		for i in range(test_data.shape[0]):
+			predictions.append((self.alpha_weights*self.history_labels).dot(Kernel_Matrix[:,i].T))
+
+		return np.sign(predictions),predictions
+
 
 	def naive_predict(self,test_data):
 
@@ -158,7 +185,7 @@ class KernelPerceptron:
 		predictions = np.dot(self.alpha_weights,Kernel_Matrix)
 		return np.sign(predictions),predictions
 
-	def predict(self,test_data):
+	def predict_3(self,test_data):
 
 		Kernel_Matrix = self.Kernel_Matrix(self.history_points,test_data)
 

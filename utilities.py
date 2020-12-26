@@ -43,7 +43,7 @@ def confusion_matrix(predictions,labels):
 
 	## compute error frequencies
 	for key in confusion_dict:
-		prdedicted_class,actual_class = key
+		predicted_class,actual_class = key
 		value = confusion_dict.get(key)
 		error_confusion_dict[key] = (value/labels_dict.get(actual_class))*100
 
