@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import AdaBoost
 import KernelPerceptron
 from sklearn.svm import SVC
+import matplotlib.image as mpimg
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 def classifier(type,hyperparams):
 
@@ -90,6 +92,9 @@ def calculate_accuracy(predictions,labels):
 ### implementation of random train-test split
 def data_split(Data,Labels,test_size):
 
+	## store the test indexes in order to find the hardest to predict items in this testing split
+	test_indexes = []
+
 	### create a random permuation of the data indexes
 	indexes = np.random.permutation(len(Data))
 	## define the test instances number
@@ -108,10 +113,11 @@ def data_split(Data,Labels,test_size):
 			train_data.append(np.array(Data[indexes[i]]))
 			train_labels.append(np.array(Labels[indexes[i]]))
 		else:
+			test_indexes.append(indexes[i])
 			test_data.append(np.array(Data[indexes[i]]))
 			test_labels.append(np.array(Labels[indexes[i]]))
 
-	return np.array(train_data), np.array(test_data),np.array(train_labels), np.array(test_labels)
+	return np.array(train_data), np.array(test_data),np.array(train_labels), np.array(test_labels), test_indexes
 
 ## given a dataset on n points and a vaalidation round
 ## the functions return a set of indexes related to the validation and one set related to the validation points
@@ -332,37 +338,103 @@ def one_vs_one_testing(model_type,pair_models,data,num_classes):
 	return predictions
 
 ## find the misclassified items with the highest confidence
-def get_hardest_to_predict_items(confidence,average_confidence,predictions,labels):
+def get_hardest_to_predict_items(confidence,average_confidence,predictions,labels,test_indexes):
 
 	count = 0
 	items_1 = []
 	index = 0
 
+	conf = []
+	for i in range(len(test_indexes)):
+		conf.append((confidence[i][0],confidence[i][1],test_indexes[i]))
+
+
 	## sort items with the biggest confidence at the start
 	## the hard items are misclassified items with big confidence
 	## that means that we predict them in a very wrong way
-	sorted_confidence = sorted(confidence, key=lambda tup: tup[1],reverse = True)
+	sorted_confidence = sorted(conf, key=lambda tup: tup[1],reverse = True)
 
-	while(count!=10):
+	while(count!=5):
 		ind = sorted_confidence[index][0]
+		c = sorted_confidence[index][1]
+		global_index = sorted_confidence[index][2]
+		prediction = predictions[ind]
+		true_label = labels[ind]
 		if(predictions[ind]!=labels[ind]):
-			items_1.append(ind)
+			items_1.append((("index_of_round:",ind),("confidence:",c),("global_index:",global_index),("prediction:",prediction),("true_label:",true_label)))
 			count += 1
 		index += 1
 
-	count = 0
-	items_2 = []
-	index = 0
+	#count = 0
+	#items_2 = []
+	#index = 0
 
 	## as an alternative find the misclasified items with the lower avearge confidence among all classifiers
-	sorted_average_confidence = sorted(average_confidence, key=lambda tup: tup[1],reverse = False)
+	#sorted_average_confidence = sorted(average_confidence, key=lambda tup: tup[1],reverse = False)
 
-	while(count!=10):
-		ind = sorted_average_confidence[index][0]
-		if(predictions[ind]!=labels[ind]):
-			items_2.append(ind)
-			count += 1
-		index += 1
+	#while(count!=10):
+	#	ind = sorted_average_confidence[index][0]
+	#	if(predictions[ind]!=labels[ind]):
+	#		items_2.append(ind)
+	#		count += 1
+	#	index += 1
 
-	return items_1,items_2
+	return items_1,[]
 
+
+def print_hard_items(items,test_data):
+
+	hard_items_indexes = []
+	for item in items:
+		print(item)
+		hard_items_indexes.append(item[0][1])
+
+	hard_images = []
+	for index in hard_items_indexes:
+		hard_images.append(test_data[index].reshape((16,16)))
+        
+	fig = plt.figure(figsize=(8., 8.))
+	grid = ImageGrid(fig, 111,nrows_ncols=(1,5),axes_pad=0.1)
+
+	for ax, im in zip(grid,hard_images):
+		ax.imshow(im)
+
+	plt.show()
+
+
+def get_hardest_to_predict_items_overall(hardest_to_predict_dict,data):
+
+	single_items_dict = {}
+
+	confidence_list = []
+
+	for key in hardest_to_predict_dict:
+		confidence_list += hardest_to_predict_dict.get(key)
+
+	sorted_confidence = sorted(confidence_list, key=lambda tup: tup[1][1],reverse = True)
+
+	hard_items_indexes = []
+
+	pred_lbl = []
+
+	for item in sorted_confidence:
+		global_index = item[2][1]
+		if(single_items_dict.get(global_index) == None):
+			single_items_dict[global_index] = 1
+			hard_items_indexes.append(global_index)
+			pred_lbl.append((item[3][1],item[4][1]))
+
+	print(hard_items_indexes[0:5])
+	print(pred_lbl[0:5])
+
+	hard_images = []
+	for index in hard_items_indexes:
+		hard_images.append(data[index].reshape((16,16)))
+        
+	fig = plt.figure(figsize=(8., 8.))
+	grid = ImageGrid(fig, 111,nrows_ncols=(1,5),axes_pad=0.1)
+
+	for ax, im in zip(grid,hard_images):
+		ax.imshow(im)
+
+	plt.show()
