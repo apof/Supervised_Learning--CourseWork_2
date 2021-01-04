@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import multi_dot
+import utilities
 
 
 class KernelPerceptron:
@@ -96,17 +97,49 @@ class KernelPerceptron:
 
 	def fit(self,training_data,training_labels):
 
+		## split training data into training and validation set
+		## validation set helps us determine when to stop our training
+
+		validation_data = training_data[int(0.8*training_data.shape[0]):]
+		validation_labels = training_labels[int(0.8*training_data.shape[0]):]
+
+		training_labels = training_labels[0:int(0.8*training_data.shape[0])]
+		training_data = training_data[0:int(0.8*training_data.shape[0])]
+		
 		self.alpha_weights = np.zeros((training_data.shape[0]))
 		self.history_points = training_data
 		self.history_labels = training_labels
 
 		Kernel_Matrix = self.Kernel_Matrix(training_data,training_data)
 
-		for epoch in range(5):
+		valid_list = []
+
+		condition = True
+		epoch = 0
+		while (condition == True):
+
 			#print("Training for epoch " + str(epoch))
 			for j in range(training_data.shape[0]):
 				if(np.sign((self.alpha_weights*training_labels).dot(Kernel_Matrix[:,j])) != training_labels[j]):
 					self.alpha_weights[j] += 1
+
+			## evaluate for the training and the validation set at the end of each epoch
+
+			train_preds,_ = self.predict(training_data)
+			valid_preds,_ = self.predict(validation_data)
+
+			misclas_train_points = np.sum(np.array((train_preds != training_labels)))
+			misclas_valid_points = np.sum(np.array((valid_preds != validation_labels)))
+
+			#print("Training and Validation Loss: " + str(misclas_train_points) + " " +  str(misclas_valid_points))
+
+			### stop training if validation accuracy has not been improved for three epochs
+			valid_list.append(misclas_valid_points)
+
+			if(len(valid_list) >= 3):
+				if((valid_list[epoch] <= valid_list[epoch - 1]) and (valid_list[epoch - 1] <= valid_list[epoch - 2]) and (valid_list[epoch - 2] <= valid_list[epoch - 3])):
+					condition = False
+					#print("Terminating training at epoch " + str(epoch+1) + " because no validation loss improvement considered for the last three epochs")
 
 
 

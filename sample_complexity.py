@@ -4,8 +4,8 @@ import numpy as np
 def least_squares(X,Y,X_test):
 
 	W = np.dot(np.linalg.pinv(X),Y)
-	prediction = np.dot(X_test,W) 
-	return 2*(prediction > 0) - 1
+	prediction = np.dot(X_test,W)
+	return np.sign(prediction) 
 
 def one_nn(X,Y,X_test):
 
@@ -43,8 +43,7 @@ def perceptron(X,Y,X_test,threshold = 0.001):
 
 		error /= X.shape[0]
 
-	## return the prediction based on the obtained weights
-	return 2*(np.dot(X_test,W) > 0) - 1
+	return np.sign(np.dot(X_test,W))
 
 
 def winnow(X,Y,X_test,threshold = 0.001):
@@ -65,44 +64,66 @@ def winnow(X,Y,X_test,threshold = 0.001):
 				error += 1
 				W *= 2 ** ((Y[i] - prediction) * X[i])
 		error /= X.shape[0]
-
 	return 2 * (np.dot(X_test,W) >= X.shape[1]) - 1
+
+
+def create_dataset(a,b):
+
+	## darw m*n samples from the multinomial distribution 
+	## which is a multivariate generalization of the binomial distribution
+	## pvals are the probabilities of the two different outcomes
+	## the first argument refers to the number of experiments
+	## the distr has the form [[0,1],[0,1],[1,0],[0,1].......]
+	multinomial_distr = np.random.multinomial(1,pvals=[0.5,0.5],size = a*b)
+
+	## convert the distribution to 0,1 ---> [1,1,0,1....]
+	multinomial_distr = multinomial_distr.argmax(axis=1)
+	
+	## convert into -1,1, 0 is converted to -1 and 1 remains 1
+	X = 2*multinomial_distr  - 1
+
+	## reshape data in order to create the input X vectors
+	X = np.array(X).reshape((a,b))
+	## set the labels as the first column of the X array
+	Y = X[:,0]
+
+	return X,Y
 
 
 def sample_complexity(algorithm,maximum_n):
 
 
-	## array to store th sample complexity
-	minimum_m = np.zeros(maximum_n)
+	minimum_m = []
+
 
 	for n in range(1,maximum_n + 1):
-		print(n)
-		m = 1
+
+		print(n, end='\r')
+		samples_number = 1
+
 		## run until finding the minimum m (number of examples) to incur
 		## no more than 10% generalisatuon error (in test set on average)
 		while True:
-			samples_number = m
+			
 			error = 0
 
 			for i in range(samples_number):
 
-				X = 2 * np.random.multinomial(1,pvals=[0.5,0.5],size = m*n).argmax(axis=1) - 1
-				X = np.array(X).reshape((m,n))
-				Y = X[:,0]
+				## create training inputs and labels
+				X,Y = create_dataset(samples_number,n)
+				## create testing inputs and labels
+				X_test,Y_test = create_dataset(n,n)
 
-				X_test = 2 * np.random.multinomial(1,pvals=[0.5,0.5],size = n*n).argmax(axis=1) - 1
-				X_test = np.array(X_test).reshape((n,n))
-				Y_test = X_test[:,0]
-         
+				## train the algorithm and predict with it
 				prediction = algorithm(X,Y,X_test)
-				error += np.count_nonzero(prediction != Y_test)/n
+				error += np.sum(prediction != Y_test)/n
 
 			error /= samples_number
 
 			if(error <= 0.1):
-				minimum_m[n-1] = m
+				minimum_m.append(samples_number)
 				break
-			m += 1
+			samples_number += 1
 
 	plt.figure()
 	plt.plot(range(1,maximum_n + 1),minimum_m)
@@ -110,10 +131,3 @@ def sample_complexity(algorithm,maximum_n):
 	plt.ylabel('m (number of patterns)')
 	plt.title('sample complexity')
 	plt.show()
-
-
-print("Computing sample complexity!")
-#sample_complexity(perceptron,100)
-sample_complexity(least_squares,100)
-#sample_complexity(winnow,300)
-#sample_complexity(one_nn,13)
