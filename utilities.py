@@ -5,6 +5,8 @@ import KernelPerceptron
 from sklearn.svm import SVC
 import matplotlib.image as mpimg
 from mpl_toolkits.axes_grid1 import ImageGrid
+import seaborn as sn
+import pandas as pd
 
 def classifier(type,hyperparams):
 
@@ -82,6 +84,29 @@ def get_average_confusions(confusion_matrix_list):
 
 	for key in avg_conf_dict:
 		print(str(key) + " " + str(avg_conf_dict.get(key)))
+
+	return avg_conf_dict
+
+def visualise_conf_dict(avg_conf_dict):
+
+	conf_error = np.zeros((10,10))
+	conf_error_std = np.zeros((10,10))
+
+	for key in avg_conf_dict:
+		predicted_class,actual_class = key
+		(error,std) = avg_conf_dict.get(key)
+		conf_error[predicted_class][actual_class] = error
+		conf_error_std[predicted_class][actual_class] = std
+
+	df_cm = pd.DataFrame(conf_error, index = [i for i in "0123456789"],
+                  columns = [i for i in "0123456789"])
+	plt.figure(figsize = (10,7))
+	sn.heatmap(df_cm, annot=True)
+
+	df_cm = pd.DataFrame(conf_error_std, index = [i for i in "0123456789"],
+                  columns = [i for i in "0123456789"])
+	plt.figure(figsize = (10,7))
+	sn.heatmap(df_cm, annot=True)
 
 
 def calculate_accuracy(predictions,labels):

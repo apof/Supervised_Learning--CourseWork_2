@@ -131,7 +131,7 @@ class KernelPerceptron:
 			misclas_train_points = np.sum(np.array((train_preds != training_labels)))
 			misclas_valid_points = np.sum(np.array((valid_preds != validation_labels)))
 
-			print("Training and Validation Loss: " + str(misclas_train_points) + " " +  str(misclas_valid_points))
+			#print("Training and Validation Loss: " + str(misclas_train_points) + " " +  str(misclas_valid_points))
 
 			### stop training if validation accuracy has not been improved for three epochs
 			valid_list.append(misclas_valid_points)
@@ -140,7 +140,7 @@ class KernelPerceptron:
 				print()
 				if((valid_list[epoch] <= valid_list[epoch - 1]) and (valid_list[epoch - 1] <= valid_list[epoch - 2]) and (valid_list[epoch - 2] <= valid_list[epoch - 3])):
 					condition = False
-					print("Terminating training at epoch " + str(epoch+1) + " because no validation loss improvement considered for the last three epochs")
+					#print("Terminating training at epoch " + str(epoch+1) + " because no validation loss improvement considered for the last three epochs")
 
 			epoch += 1
 
