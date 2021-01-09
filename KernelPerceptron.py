@@ -110,13 +110,18 @@ class KernelPerceptron:
 		self.history_points = training_data
 		self.history_labels = training_labels
 
+		best_cost =10000000
+		patience = 3
+		stop = False
+		last_improvement = 0
+
 		Kernel_Matrix = self.Kernel_Matrix(training_data,training_data)
 
 		valid_list = []
 
 		condition = True
 		epoch = 0
-		while (condition == True):
+		while (condition == True ):
 
 			#print("Training for epoch " + str(epoch))
 			for j in range(training_data.shape[0]):
@@ -131,16 +136,20 @@ class KernelPerceptron:
 			misclas_train_points = np.sum(np.array((train_preds != training_labels)))
 			misclas_valid_points = np.sum(np.array((valid_preds != validation_labels)))
 
-			#print("Training and Validation Loss: " + str(misclas_train_points) + " " +  str(misclas_valid_points))
+			print("Training and Validation Loss: " + str(misclas_train_points) + " " +  str(misclas_valid_points))
 
 			### stop training if validation accuracy has not been improved for three epochs
 			valid_list.append(misclas_valid_points)
 
-			if(len(valid_list) >= 3):
-				print()
-				if((valid_list[epoch] <= valid_list[epoch - 1]) and (valid_list[epoch - 1] <= valid_list[epoch - 2]) and (valid_list[epoch - 2] <= valid_list[epoch - 3])):
-					condition = False
-					#print("Terminating training at epoch " + str(epoch+1) + " because no validation loss improvement considered for the last three epochs")
+			if(misclas_valid_points < best_cost):
+				best_cost = misclas_valid_points
+				last_improvement = 0
+			else:
+				last_improvement += 1
+
+			if(last_improvement > patience):
+				print("Terminating training at epoch " + str(epoch+1) + " because no validation loss improvement considered for the last three epochs")
+				condition = False
 
 			epoch += 1
 

@@ -131,3 +131,37 @@ def sample_complexity(algorithm,maximum_n):
 	plt.ylabel('m (number of patterns)')
 	plt.title('sample complexity')
 	plt.show()
+
+	return minimum_m
+
+
+def create_func_values(func_type,k,n):
+	y = []
+	for i in range(n):
+		if(func_type == 'linear'):
+			y.append(k*i)
+		elif(func_type == 'log'):
+			y.append(k*np.log(i))
+		elif(func_type == 'exp'):
+			y.append(k*(2**i))
+	return y
+
+def plot_complexity(k1,k2,n,func_type,algorithm,m_values):
+
+	t = None
+	if(func_type=='linear'):
+		t = 'n'
+	elif(func_type == 'exp'):
+		t = '2^n'
+	elif(func_type == 'log'):
+		t = 'log(n)'
+
+	upper_plot=plt.plot(range(n),create_func_values(func_type,k1,n),label= str(k1) + "*" + str(t))
+	lower_plot=plt.plot(range(n),create_func_values(func_type,k2,n),label=str(k2) + "*" + str(t))
+	complexity_plot = plt.plot(range(n),m_values ,label=algorithm + " sample_complexity")
+	plt.legend()
+	plt.xlabel('n (dimension)')
+	plt.ylabel('m (number of patterns)')
+	plt.title('Sample Complexity of ' + algorithm)
+
+	plt.show()
